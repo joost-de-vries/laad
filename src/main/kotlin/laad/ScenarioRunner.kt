@@ -9,16 +9,78 @@ object Stop: RunnerMessage
 
 data class GoTo(val concurrent: Int): RunnerMessage
 
-fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.seconds(3)) = actor<RunnerMessage> {
-    var concurrent = 0
-    val jobs = mutableListOf<Job>()
+data class GetActive(val active: CompletableDeferred<Int>): RunnerMessage
+
+class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
+    suspend fun goTo(desired: Int) = channel.send(GoTo(desired))
+
+    suspend fun stop() = channel.send(Stop)
+
+    suspend fun getActive(): Int {
+        val deferred = CompletableDeferred<Int>()
+        channel.send(GetActive(deferred))
+        return deferred.await()
+    }
+}
+
+fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.seconds(3)) = ScenarioRunner(actor<RunnerMessage> {
+    val runner = InternalCoroutineRunner(0, mutableListOf(), scenario)
 
     fun checkJobs() {
-        val start = jobs.size
+
+        val removed = runner.removeNonActiveJobs()
+        if(removed > 0) println("removed $removed finished jobs")
+
+        with(runner) { adjustJobs() }
+    }
+
+    fun processMessages() {
+        do {
+            val tryMsg = channel.tryReceive()
+            if(tryMsg.isFailure || tryMsg.isClosed){
+                break
+            }
+
+            val msg = tryMsg.getOrThrow()
+
+            when(msg){
+                is GoTo -> {
+                    runner.desired = msg.concurrent
+                }
+                is Stop -> {
+                    println("stop")
+                    coroutineContext[Job]?.cancel()
+                }
+                is GetActive -> {
+                    msg.active.complete(runner.getActiveJobs())
+                }
+            }
+
+        } while (tryMsg.isSuccess)
+    }
+
+    while(isActive){
+        processMessages()
+        checkJobs()
+        delay(tick)
+    }
+})
+
+class InternalCoroutineRunner(
+    var desired: Int,
+    val jobs: MutableList<Job>,
+    val scenario: Scenario
+) {
+    fun removeNonActiveJobs(): Int {
+        val before = jobs.size
         jobs.removeIf { !it.isActive }
-        if(jobs.size < start) println("removed ${start - jobs.size} finished jobs")
-        println("checking jobs. current: ${jobs.size}, desired: ${concurrent}")
-        val toAdd = concurrent - jobs.size
+
+        return before - jobs.size
+    }
+
+    fun CoroutineScope.adjustJobs(): Int {
+        println("checking jobs. current: ${jobs.size}, desired: $desired")
+        val toAdd = desired - jobs.size
         if(toAdd > 0) {
             for(i in 0 until toAdd){
                 val job = with(scenario){ launchScenario(jobs.size + 1) }
@@ -35,39 +97,15 @@ fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.sec
         } else {
             println("steady as she goes")
         }
-    }
-    fun processMessages() {
-//        println("process messages")
-        do {
-            val tryMsg = channel.tryReceive()
-            if(tryMsg.isFailure || tryMsg.isClosed){
-//                println("done processing messages")
-//                println("try receive is $tryMsg")
-                break
-            }
 
-            val msg = tryMsg.getOrThrow()
-            when(msg){
-                is Stop -> {
-                    println("stop")
-                    coroutineContext[Job]?.cancel()
-                }
-                is GoTo -> {
-                    //println("update state to ${msg.concurrent}")
-                    concurrent = msg.concurrent
-                }
-            }
-
-        } while (tryMsg.isSuccess)
+        return toAdd
     }
 
-    while(isActive){
-        checkJobs()
-        processMessages()
-        delay(tick)
+    fun getActiveJobs(): Int {
+        removeNonActiveJobs()
+        return jobs.size
     }
 }
-
 val Int.s
     get() = Duration.seconds(this)
 

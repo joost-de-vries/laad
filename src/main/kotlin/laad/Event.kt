@@ -11,7 +11,9 @@ object Success: Outcome
 
 sealed interface Failure: Outcome
 
-object TimedOut: Failure
+object TimedOut: Failure {
+    override fun toString(): String = this::class.simpleName!!
+}
 
 data class HttpStatus(val code: Int): Failure
 
