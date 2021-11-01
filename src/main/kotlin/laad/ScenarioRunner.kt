@@ -3,13 +3,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.time.Duration
 
-sealed interface RunnerMessage
-
-object Stop: RunnerMessage
-
-data class GoTo(val concurrent: Int): RunnerMessage
-
-data class GetActive(val active: CompletableDeferred<Int>): RunnerMessage
 
 class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
     suspend fun goTo(desired: Int) = channel.send(GoTo(desired))
@@ -23,11 +16,18 @@ class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
     }
 }
 
-fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.seconds(3)) = ScenarioRunner(actor<RunnerMessage> {
+sealed interface RunnerMessage
+
+object Stop: RunnerMessage
+
+data class GoTo(val concurrent: Int): RunnerMessage
+
+data class GetActive(val active: CompletableDeferred<Int>): RunnerMessage
+
+fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.seconds(3)) = ScenarioRunner(actor {
     val runner = InternalCoroutineRunner(0, mutableListOf(), scenario)
 
     fun checkJobs() {
-
         val removed = runner.removeNonActiveJobs()
         if(removed > 0) println("removed $removed finished jobs")
 
@@ -43,7 +43,7 @@ fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.sec
 
             val msg = tryMsg.getOrThrow()
 
-            when(msg){
+            when (msg) {
                 is GoTo -> {
                     runner.desired = msg.concurrent
                 }
@@ -56,7 +56,7 @@ fun CoroutineScope.runScenario(scenario: Scenario, tick: Duration = Duration.sec
                 }
             }
 
-        } while (tryMsg.isSuccess)
+        } while (tryMsg.isSuccess && isActive)
     }
 
     while(isActive){
