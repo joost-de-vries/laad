@@ -48,7 +48,7 @@ abstract class AbstractScenario: EventScenario {
     open fun toOutcome(e:Exception): Outcome? = null
 }
 
-fun CoroutineScope.loggingEventProcessor() = actor<Event> {
+fun CoroutineScope.consoleEventProcessor() = actor<Event> {
     for(event in channel){
         println(event)
     }

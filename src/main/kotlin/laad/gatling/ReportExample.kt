@@ -1,15 +1,14 @@
 package laad.gatling
 
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import laad.*
 
-private fun main() = runBlocking<Unit> {
-    val config = config()
-    val scenarioRunner = runScenario(ExampleScenario(gatlingLoggingEventProcessor(config)), tick = 1.s)
+private fun main() = runBlocking {
+    val config = config<ExampleScenario>()
+    val scenarioRunner = runScenario(ExampleScenario(gatlingEventProcessor(config)), tick = 1.s)
 
     red("every second increase by 1")
-    for(i in 1 .. 10){
+    for (i in 1 .. 10) {
         scenarioRunner.goTo(i)
         delay(1.s)
     }
@@ -23,7 +22,6 @@ private fun main() = runBlocking<Unit> {
     scenarioRunner.goTo(10)
     delay(3.s)
 
-    coroutineContext[Job]?.cancel()
+    scenarioRunner.stop()
     generateReport(config)
 }
-

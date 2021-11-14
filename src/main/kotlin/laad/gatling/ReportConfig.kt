@@ -15,17 +15,17 @@ data class ReportConfig(
     val gatlingConfiguration: GatlingConfiguration
 )
 
-fun config(): ReportConfig = config(
+inline fun <reified A> config(): ReportConfig = config<A>(
     GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("build/simulation").build())
 )
 
-fun config(configuration: GatlingConfiguration): ReportConfig {
-    fun runId(simulationId: String): String {
-        val instant = Instant.now()
-        return simulationId + formatter.format(instant)
-    }
+inline fun <reified A> config(configuration: GatlingConfiguration): ReportConfig {
 
     val simulationId = "simulationId"
-    return ReportConfig("laad.gatling.ReportExample",simulationId, runId(simulationId), 10000L, configuration)
+    return ReportConfig(A::class.qualifiedName!!,simulationId, runId(simulationId), 10000L, configuration)
+}
+fun runId(simulationId: String): String {
+    val instant = Instant.now()
+    return simulationId + formatter.format(instant)
 }
 private val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneId.from(ZoneOffset.UTC))

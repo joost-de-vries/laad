@@ -3,6 +3,7 @@ package laad
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
+import laad.webclient.*
 
 class ExampleScenario(override val events: SendChannel<Event>): WebClientScenario() {
     private val webclient = createWebClient()

@@ -23,7 +23,7 @@ private fun main() = runBlocking {
     val scenarioRunner = runScenario(ExampleScenario(loggingEventProcessor()), tick = 1.s)
 
     // every second increase by 1
-    for(i in 1 .. 10){
+    for (i in 1 .. 10) {
         scenarioRunner.goTo(i)
         delay(1.s)
     }

@@ -1,13 +1,12 @@
 package laad
 
-import kotlinx.coroutines.Job
 import java.time.Instant
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
-import kotlin.time.Duration
 
 sealed interface Event
+
 data class CallEvent(val session: Session, val call: String, val outcome: Outcome, val start: Instant, val end: Instant): Event
 
 data class Session(val scenario: String, val userId: Long, val startTime: Instant): AbstractCoroutineContextElement(Session) {

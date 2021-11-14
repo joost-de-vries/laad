@@ -15,7 +15,7 @@ import scala.collection.immutable.List as ScalaList
 import kotlinx.coroutines.*
 
 @Suppress("INVISIBLE_REFERENCE")
-fun CoroutineScope.gatlingLoggingEventProcessor(config: ReportConfig) = actor<Event> {
+fun CoroutineScope.gatlingEventProcessor(config: ReportConfig) = actor<Event> {
     val serializer = serializer(config)
     var count = 0L
     var flushed = 0L
@@ -30,10 +30,6 @@ fun CoroutineScope.gatlingLoggingEventProcessor(config: ReportConfig) = actor<Ev
                 serializer.writer().flush()
                 flushed = div
             }
-        }
-    } catch (e: Exception) {
-        if(e !is JobCancellationException) {
-            serializer.serialize(ErrorMessage(e.message, System.currentTimeMillis()))
         }
     } finally {
         serializer.writer().close()

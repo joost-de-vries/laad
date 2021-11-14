@@ -1,12 +1,10 @@
 package laad
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 private fun main() = runBlocking<Unit> {
 
-    val scenarioRunner = runScenario(ExampleScenario(loggingEventProcessor()), tick = 1.s)
+    val scenarioRunner = runScenario(ExampleScenario(consoleEventProcessor()), tick = 1.s)
 
     red("every second increase by 1")
     for(i in 1 .. 10){
@@ -30,5 +28,4 @@ private fun main() = runBlocking<Unit> {
     delay(5.s)
 
     scenarioRunner.stop()
-    coroutineContext[Job]?.cancel()
 }

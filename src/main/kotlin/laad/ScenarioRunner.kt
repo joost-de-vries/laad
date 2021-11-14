@@ -3,11 +3,15 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import java.time.Duration
 import java.time.Instant
+import kotlin.coroutines.coroutineContext
 
 class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
     suspend fun goTo(desired: Int) = channel.send(GoTo(desired))
 
-    suspend fun stop() = channel.send(Stop)
+    suspend fun stop() {
+        channel.send(Stop)
+        coroutineContext[Job]?.cancel()
+    }
 
     suspend fun getActive(): Int {
         val deferred = CompletableDeferred<Int>()
