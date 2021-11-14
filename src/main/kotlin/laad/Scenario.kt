@@ -3,31 +3,32 @@ package laad
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.actor
-import kotlin.time.Duration
-import kotlin.time.TimeSource
-import kotlin.time.TimedValue
-import kotlin.time.measureTimedValue
+import java.lang.IllegalArgumentException
+import java.time.Duration
+import java.time.Instant
+import kotlin.coroutines.coroutineContext
 
 interface Scenario {
-    fun CoroutineScope.launchScenario(id: Int): Job
+    suspend fun runSession(id: Long)
 }
 
-abstract class AbstractScenario: Scenario {
-    protected abstract val events: SendChannel<Event>
-    protected abstract val timeout: Duration
+interface EventScenario: Scenario {
+    val events: SendChannel<Event>
+}
+
+abstract class AbstractScenario: EventScenario {
 
     @Suppress("INVISIBLE_REFERENCE")
-    suspend fun <A> call(name: String, block: suspend () -> A): A {
-        var result: TimedValue<A>? = null
+    suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A {
+        val result: A
+        val start = Instant.now()
         var outcome: Outcome? = null
         return try {
-            result = measureTimedValue {
-                withTimeout(timeout) {
-                    block()
-                }
+            result = withTimeout(timeout.toMillis()) {
+                block()
             }
             outcome = Success
-            result.value
+            result
         } catch (e: Exception) {
             outcome = toOutcome(e) ?: when(e){
                 is TimeoutCancellationException -> TimedOut
@@ -37,7 +38,9 @@ abstract class AbstractScenario: Scenario {
             throw e
         }
         finally {
-            outcome?.let { Event(name, outcome, result?.duration) }?.let {
+            val end = Instant.now()
+            val session = coroutineContext[Session]?: throw IllegalArgumentException("Session not found in coroutine context")
+            outcome?.let { CallEvent(session, name, outcome, start, end) }?.let {
                 events.send(it)
             }
         }
@@ -51,33 +54,42 @@ fun CoroutineScope.loggingEventProcessor() = actor<Event> {
     }
 }
 
-class ExampleScenario(logins: List<Int>, val duration: Duration): Scenario {
+class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
     val iterator = sequence<Int> {
         while(true){
             yieldAll(logins)
         }
     }.iterator()
 
-    override fun CoroutineScope.launchScenario(id: Int): Job =
-        launch {
-            val login = iterator.next()
-            val startTime = TimeSource.Monotonic.markNow()
-            do{
-                //println("running $id, with login $login")
-                delay(1000)
-            } while (isActive && startTime.elapsedNow() < duration)
+    override suspend fun runSession(id: Long) {
+        val login = iterator.next()
+        for(i in 0..seconds){
+            //println("running $id, with login $login")
+            delay(1000)
+
         }
 
+    }
 }
 
 private fun main() = runBlocking<Unit> {
-    val scenario = ExampleScenario(listOf(1), Duration.seconds(10))
+    val scenario = SimpleExampleScenario(listOf(1), 4)
     for(i in 1..10){
         with(scenario){
-            launchScenario(i)
+            runSession(i.toLong())
         }
     }
 
     delay(15000)
 }
 
+class RunnableScenario(private val scenario: EventScenario) {
+    fun CoroutineScope.launchScenario(id: Long): Job {
+        val session = Session(scenario::class.simpleName!!, id, Instant.now())
+        return launch(session) {
+            scenario.events.send(StartUser(session))
+            scenario.runSession(id)
+            scenario.events.send(EndUser(session, Instant.now()))
+        }
+    }
+}

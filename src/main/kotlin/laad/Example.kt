@@ -3,13 +3,10 @@ package laad
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import kotlin.time.Duration
-
 
 private fun main() = runBlocking<Unit> {
-    val scenario = WebClientScenario(duration = Duration.seconds(3), timeout = Duration.seconds(1), loggingEventProcessor())
 
-    val scenarioRunner = runScenario(scenario, 1.s)
+    val scenarioRunner = runScenario(ExampleScenario(loggingEventProcessor()), tick = 1.s)
 
     red("every second increase by 1")
     for(i in 1 .. 10){
