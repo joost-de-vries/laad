@@ -1,13 +1,28 @@
 package laad
 
+import kotlinx.coroutines.Job
+import java.time.Instant
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 
-data class Event(val call: String, val outcome: Outcome, val time: Duration?)
+sealed interface Event
+data class CallEvent(val session: Session, val call: String, val outcome: Outcome, val start: Instant, val end: Instant): Event
+
+data class Session(val scenario: String, val userId: Long, val startTime: Instant): AbstractCoroutineContextElement(Session) {
+    companion object Key : CoroutineContext.Key<Session>
+}
+
+data class StartUser(val session: Session): Event
+
+data class EndUser(val session: Session, val time: Instant): Event
 
 sealed interface Outcome
 
-object Success: Outcome
+object Success: Outcome {
+    override fun toString(): String = this::class.simpleName!!
+}
 
 sealed interface Failure: Outcome
 

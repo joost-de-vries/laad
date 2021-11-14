@@ -1,8 +1,5 @@
 package laad
 
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.actor
 import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.http.ResponseCookie
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
@@ -12,21 +9,8 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
 import reactor.netty.http.client.HttpClient
-import kotlin.time.Duration
-import kotlin.time.TimeSource
 
-class WebClientScenario(private val duration: Duration, override val timeout: Duration, override val events: SendChannel<Event>): AbstractScenario() {
-    private val webclient = createWebClient()
-
-    override fun CoroutineScope.launchScenario(id: Int): Job =
-        launch {
-            val startTime = TimeSource.Monotonic.markNow()
-            do {
-                val (response, cookies) = call("login") { webclient.callGetString() }
-//                println(response)
-                delay(1000)
-            } while (isActive && startTime.elapsedNow() < duration)
-        }
+abstract class WebClientScenario: AbstractScenario() {
 
     override fun toOutcome(e:Exception): Outcome? = when(e) {
         is WebClientResponseException -> HttpStatus(e.rawStatusCode)
@@ -35,25 +19,18 @@ class WebClientScenario(private val duration: Duration, override val timeout: Du
     }
 }
 
-private fun main() = runBlocking<Unit> {
-    val events = actor<Event> {
-        for(event in channel){
-            println(event)
-        }
-    }
-    val scenario = WebClientScenario(Duration.seconds(5), Duration.seconds(1), events)
-    for(i in 1..10){
-        with(scenario){
-            launchScenario(i)
-        }
-    }
+suspend fun WebClient.login() =
+    post().uri("/login")
+        .bodyToMonoWithCookies<String>()
+        .awaitSingle()
 
-    delay(15000)
-    events.close()
-}
+suspend fun WebClient.addItem() =
+    post().uri("/add-item")
+        .bodyToMonoWithCookies<String>()
+        .awaitSingle()
 
-suspend fun WebClient.callGetString() =
-    get().uri("/get-string")
+suspend fun WebClient.toPayment() =
+    post().uri("/to-payment")
         .bodyToMonoWithCookies<String>()
         .awaitSingle()
 

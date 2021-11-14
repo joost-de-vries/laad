@@ -13,7 +13,15 @@ private fun main() {
     val server = startWiremockServer()
 
     server.stub(
-        get(urlPathEqualTo("/get-string"))
+        post(urlPathEqualTo("/login"))
+            .returnsResponse("ok".toByteArray(), 200, MediaType.TEXT_PLAIN)
+    )
+    server.stub(
+        post(urlPathEqualTo("/add-item"))
+            .returnsResponse("ok".toByteArray(), 200, MediaType.TEXT_PLAIN)
+    )
+    server.stub(
+        post(urlPathEqualTo("/to-payment"))
             .returnsResponse("ok".toByteArray(), 200, MediaType.TEXT_PLAIN)
     )
 }

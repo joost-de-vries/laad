@@ -2,6 +2,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.5.31"
+    `java-gradle-plugin`
+    idea
 //    id("io.spring.dependency-management") version "1.0.11.RELEASE"
 //    id("org.springframework.boot") version "2.4.11"
 }
@@ -20,6 +22,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$coroutinesVersion")
+    implementation("io.gatling.highcharts:gatling-charts-highcharts:3.3.1")
+
     implementation(kotlin("stdlib-jdk8"))
     implementation("com.github.tomakehurst:wiremock-jre8:2.31.0")
     testImplementation(kotlin("test"))
@@ -29,11 +33,12 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile>() {
+tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions{
         jvmTarget = "11"
-        freeCompilerArgs = freeCompilerArgs + listOf(
-            "-Xopt-in=kotlin.RequiresOptIn,kotlin.time.ExperimentalTime",
+        freeCompilerArgs += listOf(
+            "-Xopt-in=kotlin.RequiresOptIn",
+            "-Xopt-in=kotlin.OptIn",
             "-Xskip-metadata-version-check",
             "-Xjsr305=strict"
         )
