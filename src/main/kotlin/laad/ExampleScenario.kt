@@ -8,15 +8,15 @@ class ExampleScenario(override val events: SendChannel<Event>): WebClientScenari
     private val webclient = createWebClient()
 
     override suspend fun runSession() {
-            var response = call("login") { webclient.login() }
-            delay(1000)
+        var response = call("login") { webclient.login() }
+        delay(1000)
 
-            response = call("add item") { webclient.addItem() }
-            delay(1000)
+        response = call("add item") { webclient.addItem() }
+        delay(1000)
 
-            response = call("to payment") { webclient.toPayment() }
-            delay(1000)
-        }
+        response = call("to payment") { webclient.toPayment() }
+        delay(1000)
+    }
 }
 
 private fun main() = runBlocking<Unit> {
@@ -26,7 +26,7 @@ private fun main() = runBlocking<Unit> {
         }
     }
     val scenario = ExampleScenario(events)
-    for(i in 1..10){
+    for(i in 1..10) {
         launch { scenario.runSession() }
     }
 
