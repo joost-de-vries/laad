@@ -26,9 +26,9 @@ data class GetActive(val active: CompletableDeferred<Int>): RunnerMessage
 fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duration.ofSeconds(3)) = ScenarioRunner(actor {
     val runner = InternalCoroutineRunner(0, mutableListOf(), RunnableScenario(scenario))
 
-    fun checkJobs() {
+    fun checkSessions() {
         val removed = runner.removeNonActiveSessions()
-        if (removed > 0) println("removed $removed finished jobs")
+        if (removed > 0) println("removed $removed finished sessions")
 
         with(runner) { adjustSessions() }
     }
@@ -58,7 +58,7 @@ fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duratio
 
     while(isActive){
         processMessages()
-        checkJobs()
+        checkSessions()
         delay(tick.toMillis())
     }
 })
@@ -90,7 +90,7 @@ class InternalCoroutineRunner(
                 job.cancel()
                 jobs.removeAt(0)
             }
-            println("stopped ${-toAdd} sessions's")
+            println("stopped ${-toAdd} sessions")
         } else {
             println("steady as she goes")
         }

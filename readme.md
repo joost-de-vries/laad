@@ -19,26 +19,25 @@ It launches scenario coroutines to get to the desired amount of concurrently run
 
 ```kotlin
 private fun main() = runBlocking {
-    val scenario = WebClientScenario(duration = Duration.seconds(3), timeout = Duration.seconds(1), loggingEventProcessor())
 
-    val scenarioRunner = runScenario(scenario, 1.s)
+    val scenarioRunner = runScenario(ExampleScenario(loggingEventProcessor()), tick = 1.s)
 
     // every second increase by 1
     for(i in 1 .. 10){
-        scenarioRunner.send(GoTo(i))
+        scenarioRunner.goTo(i)
         delay(1.s)
     }
     // hold steady for 5 seconds
     delay(5.s)
     // steep increase for 3 seconds
-    scenarioRunner.send(GoTo(20))
+    scenarioRunner.goTo(20)
     delay(3.s)
 
     // back to steady for 3 seconds
-    scenarioRunner.send(GoTo(10))
+    scenarioRunner.goTo(10)
     delay(3.s)
 
-    scenarioRunner.send(Stop)
+    scenarioRunner.stop()
 }
 ```
 

@@ -44,5 +44,5 @@ fun config(): Config {
 }
 fun config(configuration: GatlingConfiguration): Config {
     val simulationId = "simulationId"
-    return Config("laad.gatling.Example",simulationId, simulationId + System.currentTimeMillis(), configuration)
+    return Config("laad.gatling.ReportExample",simulationId, simulationId + System.currentTimeMillis(), configuration)
 }

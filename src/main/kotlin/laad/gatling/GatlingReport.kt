@@ -1,19 +1,9 @@
-package laad
+package laad.gatling
 
-import akka.japi.Option
 import io.gatling.app.RunResult
 import io.gatling.app.RunResultProcessor
-import io.gatling.charts.report.ReportsGenerationInputs
-import io.gatling.charts.report.ReportsGenerator
-import io.gatling.charts.stats.LogFileReader
-import io.gatling.commons.stats.Group
-import io.gatling.commons.stats.Status
-import io.gatling.commons.stats.assertion.AssertionResult
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.config.GatlingPropertiesBuilder
-import laad.gatling.Config
-import scala.collection.immutable.Nil
-import scala.collection.immutable.List as ScalaList
 
 object GatlingReport {
     fun main() {

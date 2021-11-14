@@ -30,7 +30,10 @@ fun CoroutineScope.gatlingLoggingEventProcessor(config: Config) = actor<Event> {
     }
 }
 fun Event.toGatling(): LoadEventMessage = when(this){
-    is CallEvent -> ResponseMessage(session.scenario, session.userId, ScalaList.empty(),call, start.toEpochMilli(), end.toEpochMilli(), outcome.toStatus(), Option.option(outcome.toResponseCode()).asScala(), Option.none<String>().asScala())
+    is CallEvent -> {
+        val msg = Option.option(outcome.toResponseCode()).asScala()
+        ResponseMessage(session.scenario, session.userId, ScalaList.empty(),call, start.toEpochMilli(), end.toEpochMilli(), outcome.toStatus(), msg, msg)
+    }
     is EndUser -> UserEndMessage(session.toGatling(), time.toEpochMilli())
     is StartUser -> UserStartMessage(session.toGatling())
 }
@@ -51,7 +54,6 @@ private fun Outcome.toResponseCode(): String? = when(this){
     TimedOut -> this.toString()
     is Unknown -> this::class.simpleName + exceptionClass.simpleName
 }
-
 
 fun serializer(config: Config): FileData {
     val writer = BufferedFileChannelWriter.apply(config.runId, config.gatlingConfiguration)
@@ -77,7 +79,7 @@ private fun FileData.serialize(msg:LoadEventMessage ) {
 }
 private fun FileData.serialize(msg:RunMessage ) = RunMessageSerializer(writer()).serialize(msg)
 
-private fun Session.toGatling() = GatlingSession(scenario, userId, System.currentTimeMillis(), mapOf<String, Any>().asScala(), 0, Status.apply("OK"), scala.collection.immutable.List.empty(), GatlingSession.NothingOnExit())
+private fun Session.toGatling() = GatlingSession(scenario, userId, startTime.toEpochMilli(), mapOf<String, Any>().asScala(), 0, ok, scala.collection.immutable.List.empty(), GatlingSession.NothingOnExit())
 
 fun <A, B> Map<A, B>.asScala() = JavaConverters.mapAsScalaMap(this).toMap(Predef.conforms())
 private fun main() {
