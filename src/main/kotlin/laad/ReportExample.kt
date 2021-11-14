@@ -1,7 +1,9 @@
-package laad.gatling
+package laad
 
 import kotlinx.coroutines.runBlocking
-import laad.*
+import laad.gatling.config
+import laad.gatling.gatlingEventProcessor
+import laad.gatling.generateReport
 
 private fun main() = runBlocking {
     val config = config<ExampleScenario>()

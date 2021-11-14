@@ -54,4 +54,4 @@ Concluding:
 - this is not a DSL. It's just kotlin coroutines. Which makes for 1. easier debugging 2. clear runtime semantics 3. easy extendability for new uses. None of which is true for a confining DSL like gatling f.i.  
 
 Follow up:  
-See [ReportExample](src/main/kotlin/laad/gatling/ReportExample.kt) for an extended example that uses Gatling to create a report. 
+See [ReportExample](src/main/kotlin/laad/ReportExample.kt) for an extended example that uses Gatling to create a report. 
