@@ -19,7 +19,7 @@ interface EventScenario: Scenario {
 abstract class AbstractScenario: EventScenario {
 
     @Suppress("INVISIBLE_REFERENCE")
-    suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A {
+    suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A? {
         val result: A
         val start = Instant.now()
         var outcome: Outcome? = null
@@ -35,7 +35,7 @@ abstract class AbstractScenario: EventScenario {
                 is JobCancellationException -> null
                 else -> Unknown(e::class)
             }
-            throw e
+            null
         }
         finally {
             val end = Instant.now()
@@ -83,13 +83,20 @@ private fun main() = runBlocking<Unit> {
     delay(15000)
 }
 
+@Suppress("INVISIBLE_REFERENCE")
 class RunnableScenario(private val scenario: EventScenario) {
     fun CoroutineScope.launchScenario(id: Long): Job {
         val session = Session(scenario::class.simpleName!!, id, Instant.now())
         return launch(session) {
             scenario.events.send(StartUser(session))
-            scenario.runSession(id)
-            scenario.events.send(EndUser(session, Instant.now()))
+            try {
+                scenario.runSession(id)
+                scenario.events.send(EndUser(session, Instant.now()))
+            }catch (e: Exception){
+                if(e !is JobCancellationException) {
+                    scenario.events.send(UnhandledError(e::class, Instant.now()))
+                }
+            }
         }
     }
 }

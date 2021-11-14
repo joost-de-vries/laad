@@ -18,6 +18,8 @@ data class StartUser(val session: Session): Event
 
 data class EndUser(val session: Session, val time: Instant): Event
 
+data class UnhandledError(val exceptionClass: KClass<out Throwable>, val time: Instant): Event
+
 sealed interface Outcome
 
 object Success: Outcome {

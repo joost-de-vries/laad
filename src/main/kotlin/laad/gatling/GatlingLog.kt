@@ -12,9 +12,11 @@ import scala.Predef
 import scala.collection.JavaConverters
 import io.gatling.core.session.Session as GatlingSession
 import scala.collection.immutable.List as ScalaList
+import kotlinx.coroutines.*
 
 data class Config(val simulationClassName: String, val simulationId: String, val runId: String, val gatlingConfiguration: GatlingConfiguration)
 
+@Suppress("INVISIBLE_REFERENCE")
 fun CoroutineScope.gatlingLoggingEventProcessor(config: Config) = actor<Event> {
     val serializer = serializer(config)
     try {
@@ -24,7 +26,9 @@ fun CoroutineScope.gatlingLoggingEventProcessor(config: Config) = actor<Event> {
             serializer.serialize(event.toGatling())
         }
     } catch (e: Exception){
-        serializer.serialize(ErrorMessage(e.message, System.currentTimeMillis()))
+        if(e !is JobCancellationException) {
+            serializer.serialize(ErrorMessage(e.message, System.currentTimeMillis()))
+        }
     } finally {
         serializer.writer().flush()
     }
@@ -36,10 +40,12 @@ fun Event.toGatling(): LoadEventMessage = when(this){
     }
     is EndUser -> UserEndMessage(session.toGatling(), time.toEpochMilli())
     is StartUser -> UserStartMessage(session.toGatling())
+    is UnhandledError -> ErrorMessage(this.exceptionClass.simpleName, time.toEpochMilli())
 }
 
 private val ok = Status.apply("OK")
 private val ko = Status.apply("KO")
+
 private fun Outcome.toStatus(): Status = when(this){
     is Success -> ok
     is Connect -> ko
