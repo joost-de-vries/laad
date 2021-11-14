@@ -5,13 +5,13 @@ To see whether that's true let's see what's achievable in a few hours work.
 
 The goal is to be able to increase the number of concurrent 'users' gradually, hold steady for a while, do a brief burst and then cool down.
 
-To try it out first start [wiremock](src/test/kotlin/RunWiremock.kt)  
+To try it out first start [wiremock](src/main/kotlin/laad/RunWiremock.kt)  
 Then start an [example scenario](src/main/kotlin/laad/Example.kt)
 
 Each 'user's actions is represented by a scenario
 ```kotlin
 interface Scenario {
-    fun CoroutineScope.launchScenario(id: Int): Job
+    suspend fun runSession(id: Long)
 }
 ```
 A kotlin actor is started that can be sent two messages: 'scale to $number concurrent users' and 'stop'.  
@@ -48,7 +48,11 @@ The implementation will have to map the responses to [load test events](src/main
 Another kotlin actor receives these events. To aggregate the events and allow creation of reports. Here we only log the incoming events.
 
 Concluding:  
+- coroutines _do_ make concurrency easy enough to implement a load runner in a days work  
 - coroutines are a very readable way to express the 'first this, then that' intention of load testing.  
 - actors are good tool to update mutable state concurrently. It just worked.  
 - kotlin actors are a bit clunky. Currently they don't support using classes. Which means that logic quickly becomes messy. There's a long standing [issue](https://github.com/Kotlin/kotlinx.coroutines/issues/87) to fix that.
 - this is not a DSL. It's just kotlin coroutines. Which makes for 1. easier debugging 2. clear runtime semantics 3. easy extendability for new uses. None of which is true for a confining DSL like gatling f.i.  
+
+Follow up:  
+See [ReportExample](src/main/kotlin/laad/gatling/ReportExample.kt) for an extended example that uses Gatling to create a report. 
