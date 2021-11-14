@@ -9,7 +9,7 @@ import java.time.Instant
 import kotlin.coroutines.coroutineContext
 
 interface Scenario {
-    suspend fun runSession(id: Long)
+    suspend fun runSession()
 }
 
 interface EventScenario: Scenario {
@@ -19,7 +19,7 @@ interface EventScenario: Scenario {
 abstract class AbstractScenario: EventScenario {
 
     @Suppress("INVISIBLE_REFERENCE")
-    suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A {
+    suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A? {
         val result: A
         val start = Instant.now()
         var outcome: Outcome? = null
@@ -30,12 +30,12 @@ abstract class AbstractScenario: EventScenario {
             outcome = Success
             result
         } catch (e: Exception) {
-            outcome = toOutcome(e) ?: when(e){
+            outcome = toOutcome(e) ?: when(e) {
                 is TimeoutCancellationException -> TimedOut
                 is JobCancellationException -> null
                 else -> Unknown(e::class)
             }
-            throw e
+            null
         }
         finally {
             val end = Instant.now()
@@ -61,14 +61,12 @@ class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
         }
     }.iterator()
 
-    override suspend fun runSession(id: Long) {
+    override suspend fun runSession() {
         val login = iterator.next()
         for(i in 0..seconds){
             //println("running $id, with login $login")
             delay(1000)
-
         }
-
     }
 }
 
@@ -76,20 +74,9 @@ private fun main() = runBlocking<Unit> {
     val scenario = SimpleExampleScenario(listOf(1), 4)
     for(i in 1..10){
         with(scenario){
-            runSession(i.toLong())
+            runSession()
         }
     }
 
     delay(15000)
-}
-
-class RunnableScenario(private val scenario: EventScenario) {
-    fun CoroutineScope.launchScenario(id: Long): Job {
-        val session = Session(scenario::class.simpleName!!, id, Instant.now())
-        return launch(session) {
-            scenario.events.send(StartUser(session))
-            scenario.runSession(id)
-            scenario.events.send(EndUser(session, Instant.now()))
-        }
-    }
 }
