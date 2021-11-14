@@ -11,7 +11,7 @@ Then start an [example scenario](src/main/kotlin/laad/Example.kt)
 Each 'user's actions is represented by a scenario
 ```kotlin
 interface Scenario {
-    suspend fun runSession(id: Long)
+    suspend fun runSession()
 }
 ```
 A kotlin actor is started that can be sent two messages: 'scale to $number concurrent users' and 'stop'.  

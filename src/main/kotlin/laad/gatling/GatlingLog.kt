@@ -14,54 +14,60 @@ import io.gatling.core.session.Session as GatlingSession
 import scala.collection.immutable.List as ScalaList
 import kotlinx.coroutines.*
 
-data class Config(val simulationClassName: String, val simulationId: String, val runId: String, val gatlingConfiguration: GatlingConfiguration)
-
 @Suppress("INVISIBLE_REFERENCE")
-fun CoroutineScope.gatlingLoggingEventProcessor(config: Config) = actor<Event> {
+fun CoroutineScope.gatlingLoggingEventProcessor(config: ReportConfig) = actor<Event> {
     val serializer = serializer(config)
+    var count = 0L
+    var flushed = 0L
     try {
-        val runMessage = RunMessage(config.simulationClassName, config.runId, System.currentTimeMillis(), config.runId, "3.3.1")
+        val runMessage = RunMessage(config.simulationClassName, config.simulationId, System.currentTimeMillis(), config.runId, "3.3.1")
         serializer.serialize(runMessage)
         for (event in channel) {
             serializer.serialize(event.toGatling())
+            count += 1
+            val div = count / config.flushLogEvery
+            if (div > flushed) {
+                serializer.writer().flush()
+                flushed = div
+            }
         }
-    } catch (e: Exception){
+    } catch (e: Exception) {
         if(e !is JobCancellationException) {
             serializer.serialize(ErrorMessage(e.message, System.currentTimeMillis()))
         }
     } finally {
-        serializer.writer().flush()
+        serializer.writer().close()
     }
 }
-fun Event.toGatling(): LoadEventMessage = when(this){
+fun Event.toGatling(): LoadEventMessage = when(this) {
     is CallEvent -> {
         val msg = Option.option(outcome.toResponseCode()).asScala()
         ResponseMessage(session.scenario, session.userId, ScalaList.empty(),call, start.toEpochMilli(), end.toEpochMilli(), outcome.toStatus(), msg, msg)
     }
     is EndUser -> UserEndMessage(session.toGatling(), time.toEpochMilli())
     is StartUser -> UserStartMessage(session.toGatling())
-    is UnhandledError -> ErrorMessage(this.exceptionClass.simpleName, time.toEpochMilli())
+    is UnhandledError -> ErrorMessage(exceptionClass.simpleName, time.toEpochMilli())
 }
 
 private val ok = Status.apply("OK")
 private val ko = Status.apply("KO")
 
-private fun Outcome.toStatus(): Status = when(this){
+private fun Outcome.toStatus(): Status = when(this) {
     is Success -> ok
     is Connect -> ko
     is HttpStatus -> ko
     TimedOut -> ko
     is Unknown -> ko
 }
-private fun Outcome.toResponseCode(): String? = when(this){
+private fun Outcome.toResponseCode(): String? = when(this) {
     is Success -> null
     is Connect -> this::class.simpleName + exceptionClass.simpleName
-    is HttpStatus -> this.code.toString()
+    is HttpStatus -> code.toString()
     TimedOut -> this.toString()
     is Unknown -> this::class.simpleName + exceptionClass.simpleName
 }
 
-fun serializer(config: Config): FileData {
+fun serializer(config: ReportConfig): FileData {
     val writer = BufferedFileChannelWriter.apply(config.runId, config.gatlingConfiguration)
 
     return FileData(
@@ -89,7 +95,7 @@ private fun Session.toGatling() = GatlingSession(scenario, userId, startTime.toE
 
 fun <A, B> Map<A, B>.asScala() = JavaConverters.mapAsScalaMap(this).toMap(Predef.conforms())
 private fun main() {
-    val config = Config("simulationClass", "simulationId", "runId",
+    val config = ReportConfig("simulationClass", "simulationId", "runId", 1000L,
         GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("").build())
     )
     val serializer = serializer(config)

@@ -9,7 +9,7 @@ import java.time.Instant
 import kotlin.coroutines.coroutineContext
 
 interface Scenario {
-    suspend fun runSession(id: Long)
+    suspend fun runSession()
 }
 
 interface EventScenario: Scenario {
@@ -30,7 +30,7 @@ abstract class AbstractScenario: EventScenario {
             outcome = Success
             result
         } catch (e: Exception) {
-            outcome = toOutcome(e) ?: when(e){
+            outcome = toOutcome(e) ?: when(e) {
                 is TimeoutCancellationException -> TimedOut
                 is JobCancellationException -> null
                 else -> Unknown(e::class)
@@ -61,14 +61,12 @@ class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
         }
     }.iterator()
 
-    override suspend fun runSession(id: Long) {
+    override suspend fun runSession() {
         val login = iterator.next()
         for(i in 0..seconds){
             //println("running $id, with login $login")
             delay(1000)
-
         }
-
     }
 }
 
@@ -76,27 +74,9 @@ private fun main() = runBlocking<Unit> {
     val scenario = SimpleExampleScenario(listOf(1), 4)
     for(i in 1..10){
         with(scenario){
-            runSession(i.toLong())
+            runSession()
         }
     }
 
     delay(15000)
-}
-
-@Suppress("INVISIBLE_REFERENCE")
-class RunnableScenario(private val scenario: EventScenario) {
-    fun CoroutineScope.launchScenario(id: Long): Job {
-        val session = Session(scenario::class.simpleName!!, id, Instant.now())
-        return launch(session) {
-            scenario.events.send(StartUser(session))
-            try {
-                scenario.runSession(id)
-                scenario.events.send(EndUser(session, Instant.now()))
-            }catch (e: Exception){
-                if(e !is JobCancellationException) {
-                    scenario.events.send(UnhandledError(e::class, Instant.now()))
-                }
-            }
-        }
-    }
 }

@@ -5,14 +5,7 @@ import io.gatling.app.RunResultProcessor
 import io.gatling.core.config.GatlingConfiguration
 import io.gatling.core.config.GatlingPropertiesBuilder
 
-object GatlingReport {
-    fun main() {
-        val configuration: GatlingConfiguration =
-            GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("").build())
-        generateReport(configuration,"simulationscenario1" )
-    }
-}
-fun generateReport(config: Config) {
+fun generateReport(config: ReportConfig) {
     generateReport(config.gatlingConfiguration, config.runId)
 }
 fun generateReport(gatlingConfiguration: GatlingConfiguration, runId: String) {
@@ -24,4 +17,10 @@ fun generateReport(gatlingConfiguration: GatlingConfiguration, runId: String) {
 //
 //    val reportsGenerationInputs = ReportsGenerationInputs(runId, singleLogFileReader, ScalaList.empty())
 //    val indexFile = ReportsGenerator(configuration).generateFor(reportsGenerationInputs)
+}
+object GatlingReport {
+    fun main() {
+        val configuration = GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("").build())
+        generateReport(configuration,"simulationscenario1" )
+    }
 }

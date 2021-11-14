@@ -7,7 +7,7 @@ import kotlinx.coroutines.channels.actor
 class ExampleScenario(override val events: SendChannel<Event>): WebClientScenario() {
     private val webclient = createWebClient()
 
-    override suspend fun runSession(id: Long) {
+    override suspend fun runSession() {
             var response = call("login") { webclient.login() }
             delay(1000)
 
@@ -27,7 +27,7 @@ private fun main() = runBlocking<Unit> {
     }
     val scenario = ExampleScenario(events)
     for(i in 1..10){
-        launch { scenario.runSession(i.toLong()) }
+        launch { scenario.runSession() }
     }
 
     delay(15000)
