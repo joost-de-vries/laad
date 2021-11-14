@@ -35,7 +35,7 @@ fun CoroutineScope.gatlingEventProcessor(config: ReportConfig) = actor<Event> {
         serializer.writer().close()
     }
 }
-fun Event.toGatling(): LoadEventMessage = when(this) {
+private fun Event.toGatling(): LoadEventMessage = when(this) {
     is CallEvent -> {
         val msg = Option.option(outcome.toResponseCode()).asScala()
         ResponseMessage(session.scenario, session.userId, ScalaList.empty(),call, start.toEpochMilli(), end.toEpochMilli(), outcome.toStatus(), msg, msg)
@@ -50,11 +50,9 @@ private val ko = Status.apply("KO")
 
 private fun Outcome.toStatus(): Status = when(this) {
     is Success -> ok
-    is Connect -> ko
-    is HttpStatus -> ko
-    TimedOut -> ko
-    is Unknown -> ko
+    is Failure -> ko
 }
+
 private fun Outcome.toResponseCode(): String? = when(this) {
     is Success -> null
     is Connect -> this::class.simpleName + exceptionClass.simpleName
@@ -63,7 +61,7 @@ private fun Outcome.toResponseCode(): String? = when(this) {
     is Unknown -> this::class.simpleName + exceptionClass.simpleName
 }
 
-fun serializer(config: ReportConfig): FileData {
+private fun serializer(config: ReportConfig): FileData {
     val writer = BufferedFileChannelWriter.apply(config.runId, config.gatlingConfiguration)
 
     return FileData(
@@ -78,18 +76,19 @@ fun serializer(config: ReportConfig): FileData {
 }
 private fun FileData.serialize(msg:LoadEventMessage ) {
     when(msg) {
-        is UserStartMessage    -> userStartMessageSerializer().serialize(msg)
-        is UserEndMessage    -> userEndMessageSerializer().serialize(msg)
-        is GroupMessage    -> groupMessageSerializer().serialize(msg)
-        is ResponseMessage    -> responseMessageSerializer().serialize(msg)
-        is ErrorMessage    -> errorMessageSerializer().serialize(msg)
+        is UserStartMessage -> userStartMessageSerializer().serialize(msg)
+        is UserEndMessage -> userEndMessageSerializer().serialize(msg)
+        is GroupMessage -> groupMessageSerializer().serialize(msg)
+        is ResponseMessage -> responseMessageSerializer().serialize(msg)
+        is ErrorMessage -> errorMessageSerializer().serialize(msg)
     }
 }
+
 private fun FileData.serialize(msg:RunMessage ) = RunMessageSerializer(writer()).serialize(msg)
 
 private fun Session.toGatling() = GatlingSession(scenario, userId, startTime.toEpochMilli(), mapOf<String, Any>().asScala(), 0, ok, scala.collection.immutable.List.empty(), GatlingSession.NothingOnExit())
 
-fun <A, B> Map<A, B>.asScala() = JavaConverters.mapAsScalaMap(this).toMap(Predef.conforms())
+private fun <A, B> Map<A, B>.asScala() = JavaConverters.mapAsScalaMap(this).toMap(Predef.conforms())
 private fun main() {
     val config = ReportConfig("simulationClass", "simulationId", "runId", 1000L,
         GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("").build())
