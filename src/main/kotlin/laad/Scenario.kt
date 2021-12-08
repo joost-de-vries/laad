@@ -71,6 +71,7 @@ class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
 }
 
 private fun main() = runBlocking<Unit> {
+
     val scenario = SimpleExampleScenario((0..10).toList(), 4)
     for(i in 1..10){
         with(scenario){

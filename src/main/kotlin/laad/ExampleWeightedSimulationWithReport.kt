@@ -8,7 +8,10 @@ import laad.gatling.generateReport
 private fun main() = runBlocking<Unit> {
     val config = config<ExampleScenario>()
     val eventProcessor = gatlingEventProcessor(config)
-    val scenarioRunner = runScenario(weighted(listOf(10 to ExampleScenario(eventProcessor), 90 to OtherExampleScenario(eventProcessor))), tick = 1.s)
+    val scenarioRunner = runScenario(weighted(
+        10 to ExampleScenario(eventProcessor),
+        90 to OtherExampleScenario(eventProcessor)
+    ), tick = 1.s)
 
     red("every second increase by 1")
     for (i in 1 .. 10) {

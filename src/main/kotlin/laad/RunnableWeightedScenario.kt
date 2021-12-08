@@ -17,6 +17,7 @@ class RunnableWeightedScenario(
     override fun CoroutineScope.launchSession(sessionId: Long): Job = with(weighted.next()) { launchSession(sessionId)}
 }
 
+fun weighted(vararg scenarios: Pair<Int, EventScenario>) = weighted(scenarios.toList())
 fun weighted(scenarios: List<Pair<Int, EventScenario>>) = RunnableWeightedScenario(scenarios)
 
 private class WeightedIterator<E>(private val random: Random = Random()) {
@@ -52,12 +53,12 @@ class OtherExampleScenario(override val events: SendChannel<Event>): WebClientSc
 
     override suspend fun runSession() {
         var response = call("login") { webclient.login() }
-        kotlinx.coroutines.delay(1000)
+        delay(1.s)
 
         response = call("add item") { webclient.addItem() }
-        kotlinx.coroutines.delay(1000)
+        delay(1.s)
 
         response = call("to payment") { webclient.toPayment() }
-        kotlinx.coroutines.delay(1000)
+        delay(1.s)
     }
 }
