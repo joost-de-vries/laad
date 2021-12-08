@@ -39,7 +39,7 @@ abstract class AbstractScenario: EventScenario {
         }
         finally {
             val end = Instant.now()
-            val session = coroutineContext[Session]?: throw IllegalArgumentException("Session not found in coroutine context")
+            val session = coroutineContext[Session] ?: throw IllegalArgumentException("Session not found in coroutine context")
             outcome?.let { CallEvent(session, name, outcome, start, end) }?.let {
                 events.send(it)
             }

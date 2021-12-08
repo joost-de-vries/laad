@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.5.31"
+    kotlin("jvm") version "1.6.10-RC"
     `java-gradle-plugin`
     idea
 //    id("io.spring.dependency-management") version "1.0.11.RELEASE"
@@ -14,7 +14,7 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
-val coroutinesVersion = "1.5.2"
+val coroutinesVersion = "1.6.0-RC"
 dependencies {
     //implementation(platform("org.springframework.boot:spring-boot-dependencies:2.4.11"))
     implementation("org.springframework:spring-webflux:5.3.10")
@@ -35,7 +35,8 @@ tasks.test {
 
 tasks.withType<KotlinCompile>().configureEach {
     kotlinOptions{
-        jvmTarget = "11"
+        languageVersion = "1.6"
+        jvmTarget = "17"
         freeCompilerArgs += listOf(
             "-Xopt-in=kotlin.RequiresOptIn",
             "-Xopt-in=kotlin.OptIn",

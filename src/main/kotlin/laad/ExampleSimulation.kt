@@ -7,7 +7,7 @@ private fun main() = runBlocking<Unit> {
     val scenarioRunner = runScenario(ExampleScenario(consoleEventProcessor()), tick = 1.s)
 
     red("every second increase by 1")
-    for(i in 1 .. 10){
+    for (i in 1 .. 10) {
         scenarioRunner.goTo(i)
         delay(1.s)
     }
@@ -17,7 +17,7 @@ private fun main() = runBlocking<Unit> {
     scenarioRunner.goTo(20)
     delay(3.s)
 
-    red("current active is ${scenarioRunner.getActive()}")
+    red("currently ${scenarioRunner.getRunningSessions()} # sessions")
 
     red("back to steady for 3 seconds")
     scenarioRunner.goTo(10)

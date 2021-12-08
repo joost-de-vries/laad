@@ -18,9 +18,3 @@ fun generateReport(gatlingConfiguration: GatlingConfiguration, runId: String) {
 //    val reportsGenerationInputs = ReportsGenerationInputs(runId, singleLogFileReader, ScalaList.empty())
 //    val indexFile = ReportsGenerator(configuration).generateFor(reportsGenerationInputs)
 }
-object GatlingReport {
-    fun main() {
-        val configuration = GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("").build())
-        generateReport(configuration,"simulationscenario1" )
-    }
-}
