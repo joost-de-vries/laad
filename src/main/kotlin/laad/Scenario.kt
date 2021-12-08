@@ -48,7 +48,7 @@ abstract class AbstractScenario: EventScenario {
     open fun toOutcome(e:Exception): Outcome? = null
 }
 
-fun CoroutineScope.consoleEventProcessor() = actor<Event> {
+fun CoroutineScope.consoleEventProcessor(): SendChannel<Event> = actor {
     for(event in channel){
         println(event)
     }
@@ -64,14 +64,14 @@ class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
     override suspend fun runSession() {
         val login = iterator.next()
         for(i in 0..seconds){
-            //println("running $id, with login $login")
+            println("running with login $login")
             delay(1000)
         }
     }
 }
 
 private fun main() = runBlocking<Unit> {
-    val scenario = SimpleExampleScenario(listOf(1), 4)
+    val scenario = SimpleExampleScenario((0..10).toList(), 4)
     for(i in 1..10){
         with(scenario){
             runSession()

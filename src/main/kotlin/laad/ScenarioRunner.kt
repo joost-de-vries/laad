@@ -28,8 +28,11 @@ data class GoTo(val concurrent: Int): RunnerMessage
 
 data class GetRunningSessions(val active: CompletableDeferred<Int>): RunnerMessage
 
-fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duration.ofSeconds(3)) = ScenarioRunner(actor {
-    val sessions = Sessions(0, mutableListOf(), RunnableScenario(scenario))
+fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duration.ofSeconds(3)) =
+    runScenario(DefaultRunnableScenario(scenario), tick)
+
+fun CoroutineScope.runScenario(scenario: RunnableScenario, tick: Duration = Duration.ofSeconds(3)) = ScenarioRunner(actor {
+    val sessions = Sessions(0, mutableListOf(), scenario)
 
     fun processMessages() {
         do {
@@ -108,10 +111,14 @@ class Sessions(
     }
 }
 
-@Suppress("INVISIBLE_REFERENCE")
-class RunnableScenario(private val scenario: EventScenario) {
+interface RunnableScenario {
+    fun CoroutineScope.launchSession(sessionId: Long): Job
+}
 
-    fun CoroutineScope.launchSession(sessionId: Long): Job {
+@Suppress("INVISIBLE_REFERENCE")
+class DefaultRunnableScenario(private val scenario: EventScenario): RunnableScenario {
+
+    override fun CoroutineScope.launchSession(sessionId: Long): Job {
         val session = Session(scenario::class.simpleName!!, sessionId, Instant.now())
         return launch(session) {
             scenario.events.send(StartUser(session))
@@ -133,3 +140,19 @@ val Int.s
 suspend fun delay(duration: Duration): Unit = delay(duration.toMillis())
 
 fun red(msg: String) = System.err.println(msg)
+
+
+private fun main() = runBlocking<Unit> {
+    val events = actor<Event> {
+        for(event in channel){
+            println(event)
+        }
+    }
+    val scenario = DefaultRunnableScenario(ExampleScenario(events))
+    for(i in 1..10L) {
+        with(scenario) { launchSession(i) }
+    }
+
+    delay(15000)
+    events.close()
+}
