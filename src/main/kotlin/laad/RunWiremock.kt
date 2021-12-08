@@ -36,6 +36,7 @@ fun startWiremockServer(port: Int = 9999) = WireMockServer(
 
 fun WireMockServer.stub(mappingBuilder: MappingBuilder) =
     addStubMapping(stubFor(mappingBuilder))
+
 typealias WithResponse = ResponseDefinitionBuilder.() -> ResponseDefinitionBuilder
 
 fun MappingBuilder.returnsResponse(body: ByteArray?, statusCode: Int, contentType: MediaType, withResponse: WithResponse? = null) =

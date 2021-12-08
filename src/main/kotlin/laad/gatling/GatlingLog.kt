@@ -89,10 +89,3 @@ private fun FileData.serialize(msg:RunMessage ) = RunMessageSerializer(writer())
 private fun Session.toGatling() = GatlingSession(scenario, userId, startTime.toEpochMilli(), mapOf<String, Any>().asScala(), 0, ok, scala.collection.immutable.List.empty(), GatlingSession.NothingOnExit())
 
 private fun <A, B> Map<A, B>.asScala() = JavaConverters.mapAsScalaMap(this).toMap(Predef.conforms())
-private fun main() {
-    val config = ReportConfig("simulationClass", "simulationId", "runId", 1000L,
-        GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("").build())
-    )
-    val serializer = serializer(config)
-
-}

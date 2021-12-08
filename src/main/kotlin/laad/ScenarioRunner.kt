@@ -13,10 +13,10 @@ class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
         coroutineContext[Job]?.cancel()
     }
 
-    suspend fun getActive(): Int {
-        val deferred = CompletableDeferred<Int>()
-        channel.send(GetActive(deferred))
-        return deferred.await()
+    suspend fun getRunningSessions(): Int {
+        val deferredCount = CompletableDeferred<Int>()
+        channel.send(GetRunningSessions(deferredCount))
+        return deferredCount.await()
     }
 }
 
@@ -26,17 +26,10 @@ object Stop: RunnerMessage
 
 data class GoTo(val concurrent: Int): RunnerMessage
 
-data class GetActive(val active: CompletableDeferred<Int>): RunnerMessage
+data class GetRunningSessions(val active: CompletableDeferred<Int>): RunnerMessage
 
 fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duration.ofSeconds(3)) = ScenarioRunner(actor {
     val sessions = Sessions(0, mutableListOf(), RunnableScenario(scenario))
-
-    fun checkSessions() {
-        val removed = sessions.removeNonActiveSessions()
-        if (removed > 0) println("removed $removed finished sessions")
-
-        with(sessions) { adjustSessions() }
-    }
 
     fun processMessages() {
         do {
@@ -53,7 +46,7 @@ fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duratio
                     println("stop")
                     coroutineContext[Job]?.cancel()
                 }
-                is GetActive -> {
+                is GetRunningSessions -> {
                     msg.active.complete(sessions.getActiveJobs())
                 }
             }
@@ -63,8 +56,8 @@ fun CoroutineScope.runScenario(scenario: EventScenario, tick: Duration = Duratio
 
     while(isActive) {
         processMessages()
-        checkSessions()
-        delay(tick.toMillis())
+        with(sessions) { adjustSessions() }
+        delay(tick)
     }
 })
 
@@ -75,19 +68,15 @@ class Sessions(
 ) {
     private var sessionCounter = 0L
 
-    fun removeNonActiveSessions(): Int {
-        val before = jobs.size
-        jobs.removeIf { !it.isActive }
-
-        return before - jobs.size
-    }
-
     fun CoroutineScope.adjustSessions(): Int {
+        val removed = removeNonActiveSessions()
+        if (removed > 0) println("removed $removed finished sessions")
+
         println("checking sessions. current: ${jobs.size}, desired: $desired")
         val diff = desired - jobs.size
         if (diff > 0) {
             for (i in 0 until diff) {
-                val job = with(scenario) { launchSession(sessionCounter) }
+                val job = with(scenario) { launchSession(sessionId = sessionCounter) }
                 sessionCounter += 1
                 jobs += job
             }
@@ -106,6 +95,13 @@ class Sessions(
         return diff
     }
 
+    private fun removeNonActiveSessions(): Int {
+        val before = jobs.size
+        jobs.removeIf { !it.isActive }
+
+        return before - jobs.size
+    }
+
     fun getActiveJobs(): Int {
         removeNonActiveSessions()
         return jobs.size
@@ -115,17 +111,18 @@ class Sessions(
 @Suppress("INVISIBLE_REFERENCE")
 class RunnableScenario(private val scenario: EventScenario) {
 
-    fun CoroutineScope.launchSession(id: Long): Job {
-        val session = Session(scenario::class.simpleName!!, id, Instant.now())
+    fun CoroutineScope.launchSession(sessionId: Long): Job {
+        val session = Session(scenario::class.simpleName!!, sessionId, Instant.now())
         return launch(session) {
             scenario.events.send(StartUser(session))
             try {
                 scenario.runSession()
-                scenario.events.send(EndUser(session, Instant.now()))
             } catch (e: Exception) {
                 if (e !is JobCancellationException) {
                     scenario.events.send(UnhandledError(e::class, Instant.now()))
                 }
+            } finally {
+                scenario.events.send(EndUser(session, Instant.now()))
             }
         }
     }

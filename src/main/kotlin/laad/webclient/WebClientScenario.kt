@@ -38,8 +38,8 @@ suspend fun WebClient.toPayment() =
         .bodyToMonoWithCookies<String>()
         .awaitSingle()
 
-inline fun <reified T: Any> WebClient.RequestHeadersSpec<out WebClient.RequestHeadersSpec<*>>.bodyToMonoWithCookies() =
-   exchangeToMono<Pair<T, MultiValueMap<String, ResponseCookie>>> { response ->
+inline fun <reified T: Any> WebClient.RequestHeadersSpec<out WebClient.RequestHeadersSpec<*>>.bodyToMonoWithCookies(): Mono<Pair<T, MultiValueMap<String, ResponseCookie>>> =
+   exchangeToMono { response ->
     if (response.statusCode().is2xxSuccessful) {
         response.bodyToMono(T::class.java).map { it to response.cookies() }
     } else {
@@ -49,7 +49,7 @@ inline fun <reified T: Any> WebClient.RequestHeadersSpec<out WebClient.RequestHe
     }
 }
 
-fun createWebClient() =
+fun createWebClient(): WebClient =
     WebClient.builder()
         .clientConnector(ReactorClientHttpConnector(HttpClient.create()))
         .baseUrl("http://localhost:9999").build()
