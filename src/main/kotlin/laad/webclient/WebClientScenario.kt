@@ -1,10 +1,8 @@
 package laad.webclient
 
 import kotlinx.coroutines.reactor.awaitSingle
-import laad.AbstractScenario
-import laad.Connect
-import laad.HttpStatus
-import laad.Outcome
+import kotlinx.coroutines.withContext
+import laad.*
 import org.springframework.http.ResponseCookie
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.util.MultiValueMap
@@ -13,9 +11,14 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
 import reactor.netty.http.client.HttpClient
+import kotlin.coroutines.coroutineContext
 
-abstract class WebClientScenario: AbstractScenario() {
-    override fun toOutcome(e:Exception): Outcome? = webclientExceptionToOutcome(e)
+fun WebClientScenario(scenario: suspend () -> Unit): Scenario {
+    return Scenario {
+        withContext(coroutineContext + ExceptionToOutcome(::webclientExceptionToOutcome)) {
+            scenario.invoke()
+        }
+    }
 }
 
 fun webclientExceptionToOutcome(exception: Exception): Outcome? = when(exception) {

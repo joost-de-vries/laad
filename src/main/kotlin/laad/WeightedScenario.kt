@@ -1,18 +1,13 @@
 package laad
 
-import laad.webclient.*
 import java.util.*
 
-class WeightedScenario(
-    private val scenarios: List<Pair<Int, Scenario>>): Scenario {
-    init {
-        require(scenarios.isNotEmpty()) { "Expected at least one scenario." }
-    }
-    private val weighted = WeightedIterator.of(this.scenarios)
+fun WeightedScenario(
+    scenarios: List<Pair<Int, Scenario>>): Scenario {
+    require(scenarios.isNotEmpty()) { "Expected at least one scenario." }
+    val weighted = WeightedIterator.of(scenarios)
 
-    override suspend fun runSession() {
-        weighted.next().runSession()
-    }
+    return Scenario { weighted.next().invoke() }
 }
 
 fun weighted(vararg scenarios: Pair<Int, Scenario>) = weighted(scenarios.toList())
@@ -43,20 +38,5 @@ private class WeightedIterator<E>(private val random: Random = Random()) {
                 }
             }
         }
-    }
-}
-
-class OtherExampleScenario(): WebClientScenario() {
-    private val webclient = createWebClient()
-
-    override suspend fun runSession() {
-        var response = call("login") { webclient.login() }
-        delay(1.s)
-
-        response = call("add item") { webclient.addItem() }
-        delay(1.s)
-
-        response = call("to payment") { webclient.toPayment() }
-        delay(1.s)
     }
 }

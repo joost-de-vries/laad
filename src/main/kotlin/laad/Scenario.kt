@@ -9,14 +9,13 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-interface Scenario {
-    suspend fun runSession()
+//interface Scenario {
+//    suspend fun runSession()
+//}
+fun interface Scenario {
+    suspend operator fun invoke()
 }
 
-abstract class AbstractScenario: Scenario {
-
-    open fun toOutcome(e: java.lang.Exception): Outcome? = null
-}
 @Suppress("INVISIBLE_REFERENCE")
 suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A? {
     val result: A
@@ -55,15 +54,14 @@ fun CoroutineScope.consoleEventProcessor(): SendChannel<Event> = actor {
         println(event)
     }
 }
-
-class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
+fun SimpleExampleScenario(logins: List<Int>, seconds: Int): Scenario {
     val iterator = sequence<Int> {
         while(true){
             yieldAll(logins)
         }
     }.iterator()
 
-    override suspend fun runSession() {
+    return Scenario {
         val login = iterator.next()
         for(i in 0..seconds){
             println("running with login $login")
@@ -76,9 +74,7 @@ private fun main() = runBlocking<Unit> {
 
     val scenario = SimpleExampleScenario((0..10).toList(), 4)
     for(i in 1..10){
-        with(scenario){
-            runSession()
-        }
+        scenario()
     }
 
     delay(15000)

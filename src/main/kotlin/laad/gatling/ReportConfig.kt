@@ -15,14 +15,15 @@ data class ReportConfig(
     val gatlingConfiguration: GatlingConfiguration
 )
 
-inline fun <reified A> config(): ReportConfig = config<A>(
+inline fun config(simulationName: String): ReportConfig =
+    config(simulationName,
     GatlingConfiguration.loadForTest(GatlingPropertiesBuilder().resultsDirectory("build/simulation").build())
 )
 
-inline fun <reified A> config(configuration: GatlingConfiguration): ReportConfig {
+inline fun config(simulationName: String, configuration: GatlingConfiguration): ReportConfig {
 
     val simulationId = "simulationId"
-    return ReportConfig(A::class.qualifiedName!!,simulationId, runId(simulationId), 10000L, configuration)
+    return ReportConfig(simulationName,simulationId, runId(simulationId), 10000L, configuration)
 }
 fun runId(simulationId: String): String {
     val instant = Instant.now()

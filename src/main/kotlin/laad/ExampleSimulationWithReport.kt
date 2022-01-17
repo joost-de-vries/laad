@@ -6,7 +6,7 @@ import laad.gatling.gatlingEventProcessor
 import laad.gatling.generateReport
 
 private fun main() = runBlocking {
-    val config = config<ExampleScenario>()
+    val config = config(::ExampleScenario.name)
     val eventProcessor = gatlingEventProcessor(config)
     val scenarioRunner = runScenario(ExampleScenario(),eventProcessor,  tick = 1.s)
 

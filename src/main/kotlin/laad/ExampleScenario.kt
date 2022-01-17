@@ -1,11 +1,12 @@
 package laad
 
 import laad.webclient.*
+import org.springframework.web.reactive.function.client.WebClient
 
-class ExampleScenario: WebClientScenario() {
-    private val webclient = createWebClient()
+fun ExampleScenario(): Scenario {
+    val webclient = createWebClient()
 
-    override suspend fun runSession() {
+    return WebClientScenario {
         var response = call("login") { webclient.login() }
         delay(1.s)
 
@@ -17,15 +18,29 @@ class ExampleScenario: WebClientScenario() {
     }
 }
 
-class FailingScenario: WebClientScenario() {
-    private val webclient = createWebClient()
+fun OtherExampleScenario(): Scenario {
+    val webclient: WebClient = createWebClient()
 
-    override suspend fun runSession() {
+    return WebClientScenario {
+        var response = call("login") { webclient.login() }
+        delay(1.s)
+
+        response = call("add item") { webclient.addItem() }
+        delay(1.s)
+
+        response = call("to payment") { webclient.toPayment() }
+        delay(1.s)
+    }
+}
+
+fun FailingScenario(): Scenario {
+    val webclient = createWebClient()
+
+    return WebClientScenario {
         try {
             call<String>("login") {
-                if(1 > 0){
+                if(1 > 0) {
                     throw Boom()
-
                 }
                 ""
             }
@@ -35,7 +50,7 @@ class FailingScenario: WebClientScenario() {
             call("to payment") { webclient.toPayment() }
             delay(1.s)
 
-        } catch (e: java.lang.Exception){
+        } catch (e: Exception){
             System.err.println("after boom")
             call("add item anonymously") { webclient.addItem() }
         }

@@ -6,11 +6,11 @@ import laad.gatling.gatlingEventProcessor
 import laad.gatling.generateReport
 
 private fun main() = runBlocking<Unit> {
-    val config = config<ExampleScenario>()
+    val config = config(::ExampleScenario.name)
     val eventProcessor = gatlingEventProcessor(config)
     val scenarioRunner = runScenario(weighted(
         50 to ExampleScenario(),
-        50 to FailingScenario()
+        50 to OtherExampleScenario()
     ), eventProcessor, tick = 1.s)
 
     red("every second increase by 1")

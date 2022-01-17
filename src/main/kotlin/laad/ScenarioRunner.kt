@@ -85,9 +85,9 @@ class Sessions(
 
                 val job = launch {
                     when(events) {
-                        null -> scenario.runSession()
+                        null -> scenario()
                         else -> events.publishEvents(session) {
-                            scenario.runSession()
+                            scenario()
                         }
                     }
                 }
@@ -156,10 +156,10 @@ private fun main() = runBlocking<Unit> {
     }
     val scenario = ExampleScenario()
     for (i in 1..10L) {
-        val session = Session(scenario::class.simpleName!!,i, Instant.now())
+        val session = Session(::ExampleScenario.name,i, Instant.now())
         launch {
             events.publishEvents(session) {
-                scenario.runSession()
+                scenario()
             }
         }
     }
