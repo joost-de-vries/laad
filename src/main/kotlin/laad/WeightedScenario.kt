@@ -1,24 +1,22 @@
 package laad
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.SendChannel
 import laad.webclient.*
 import java.util.*
 
-class RunnableWeightedScenario(
-    scenarios: List<Pair<Int, EventScenario>>): RunnableScenario {
+class WeightedScenario(
+    private val scenarios: List<Pair<Int, Scenario>>): Scenario {
     init {
         require(scenarios.isNotEmpty()) { "Expected at least one scenario." }
     }
-    private val runnableScenarios = scenarios.map { (weight, scenario) -> weight to DefaultRunnableScenario(scenario) }
-    private val weighted = WeightedIterator.of(runnableScenarios)
+    private val weighted = WeightedIterator.of(this.scenarios)
 
-    override fun CoroutineScope.launchSession(sessionId: Long): Job = with(weighted.next()) { launchSession(sessionId)}
+    override suspend fun runSession() {
+        weighted.next().runSession()
+    }
 }
 
-fun weighted(vararg scenarios: Pair<Int, EventScenario>) = weighted(scenarios.toList())
-fun weighted(scenarios: List<Pair<Int, EventScenario>>) = RunnableWeightedScenario(scenarios)
+fun weighted(vararg scenarios: Pair<Int, Scenario>) = weighted(scenarios.toList())
+fun weighted(scenarios: List<Pair<Int, Scenario>>) = WeightedScenario(scenarios)
 
 private class WeightedIterator<E>(private val random: Random = Random()) {
     private val map = TreeMap<Double, E>()
@@ -38,8 +36,8 @@ private class WeightedIterator<E>(private val random: Random = Random()) {
     }
 
     companion object {
-        fun of(scenarios: List<Pair<Int, RunnableScenario>>): WeightedIterator<RunnableScenario> {
-            return WeightedIterator<RunnableScenario>().apply {
+        fun <E> of(scenarios: List<Pair<Int, E>>): WeightedIterator<E> {
+            return WeightedIterator<E>().apply {
                 for((weight, scenario) in scenarios){
                     this.add(weight.toDouble(), scenario)
                 }
@@ -48,7 +46,7 @@ private class WeightedIterator<E>(private val random: Random = Random()) {
     }
 }
 
-class OtherExampleScenario(override val events: SendChannel<Event>): WebClientScenario() {
+class OtherExampleScenario(): WebClientScenario() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {

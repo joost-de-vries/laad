@@ -1,9 +1,8 @@
 package laad
 
-import kotlinx.coroutines.channels.SendChannel
 import laad.webclient.*
 
-class ExampleScenario(override val events: SendChannel<Event>): WebClientScenario() {
+class ExampleScenario: WebClientScenario() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {
@@ -17,3 +16,29 @@ class ExampleScenario(override val events: SendChannel<Event>): WebClientScenari
         delay(1.s)
     }
 }
+
+class FailingScenario: WebClientScenario() {
+    private val webclient = createWebClient()
+
+    override suspend fun runSession() {
+        try {
+            call<String>("login") {
+                if(1 > 0){
+                    throw Boom()
+
+                }
+                ""
+            }
+            delay(1.s)
+            call("add item") { webclient.addItem() }
+
+            call("to payment") { webclient.toPayment() }
+            delay(1.s)
+
+        } catch (e: java.lang.Exception){
+            System.err.println("after boom")
+            call("add item anonymously") { webclient.addItem() }
+        }
+    }
+}
+class Boom: Exception("BOOM")

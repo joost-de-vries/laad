@@ -15,13 +15,14 @@ import reactor.core.publisher.Mono
 import reactor.netty.http.client.HttpClient
 
 abstract class WebClientScenario: AbstractScenario() {
+    override fun toOutcome(e:Exception): Outcome? = webclientExceptionToOutcome(e)
+}
 
-    override fun toOutcome(e:Exception): Outcome? = when(e) {
-        is WebClientResponseException -> HttpStatus(e.rawStatusCode)
-        is WebClientRequestException -> Connect(e::class)
+fun webclientExceptionToOutcome(exception: Exception): Outcome? = when(exception) {
+        is WebClientResponseException -> HttpStatus(exception.rawStatusCode)
+        is WebClientRequestException -> Connect(exception::class)
         else -> null
     }
-}
 
 suspend fun WebClient.login() =
     post().uri("/login")

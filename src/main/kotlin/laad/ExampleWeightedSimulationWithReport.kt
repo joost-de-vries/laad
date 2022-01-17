@@ -9,9 +9,9 @@ private fun main() = runBlocking<Unit> {
     val config = config<ExampleScenario>()
     val eventProcessor = gatlingEventProcessor(config)
     val scenarioRunner = runScenario(weighted(
-        10 to ExampleScenario(eventProcessor),
-        90 to OtherExampleScenario(eventProcessor)
-    ), tick = 1.s)
+        50 to ExampleScenario(),
+        50 to FailingScenario()
+    ), eventProcessor, tick = 1.s)
 
     red("every second increase by 1")
     for (i in 1 .. 10) {

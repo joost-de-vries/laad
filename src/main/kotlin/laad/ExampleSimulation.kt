@@ -4,7 +4,7 @@ import kotlinx.coroutines.runBlocking
 
 private fun main() = runBlocking<Unit> {
 
-    val scenarioRunner = runScenario(ExampleScenario(consoleEventProcessor()), tick = 1.s)
+    val scenarioRunner = runScenario(ExampleScenario(), consoleEventProcessor(), tick = 1.s)
 
     red("every second increase by 1")
     for (i in 1 .. 10) {

@@ -35,5 +35,5 @@ data class HttpStatus(val code: Int): Failure
 
 data class Connect(val exceptionClass: KClass<out Throwable>): Failure
 
-data class Unknown(val exceptionClass: KClass<out Throwable>): Failure
+data class ExceptionFailure(val exceptionClass: KClass<out Throwable>): Failure
 
