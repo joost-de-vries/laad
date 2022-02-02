@@ -8,7 +8,8 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
+class LoadTest(private val channel: SendChannel<RunnerMessage>) {
+    /** Go to desired nr of concurrent running users */
     suspend fun goTo(desired: Int) = channel.send(GoTo(desired))
 
     suspend fun stop() {
@@ -31,8 +32,8 @@ data class GoTo(val concurrent: Int): RunnerMessage
 
 data class GetRunningSessions(val active: CompletableDeferred<Int>): RunnerMessage
 
-fun CoroutineScope.runScenario(scenario: Scenario, events: SendChannel<Event>?, tick: Duration = Duration.ofSeconds(3)) = ScenarioRunner(actor {
-    val sessions = Sessions(0, mutableListOf(), scenario, events, coroutineContext + SupervisorJob(coroutineContext[Job]))
+fun CoroutineScope.runUserScript(userScript: UserScript, events: SendChannel<Event>? = null, tick: Duration = Duration.ofSeconds(1)) = LoadTest(actor {
+    val sessions = Sessions(0, mutableListOf(), userScript, events ?: consoleEventProcessor(), coroutineContext + SupervisorJob(coroutineContext[Job]))
 
     fun processMessages() {
         do {
@@ -67,8 +68,8 @@ fun CoroutineScope.runScenario(scenario: Scenario, events: SendChannel<Event>?, 
 class Sessions(
     var desired: Int,
     private val jobs: MutableList<Job>,
-    private val scenario: Scenario,
-    private val events: SendChannel<Event>?,
+    private val userScript: UserScript,
+    private val events: SendChannel<Event>,
     override val coroutineContext: CoroutineContext
 ): CoroutineScope {
     private var sessionCounter = 0L
@@ -81,13 +82,13 @@ class Sessions(
         val diff = desired - jobs.size
         if (diff > 0) {
             for (i in 0 until diff) {
-                val session = Session(scenario::class.simpleName!!, sessionCounter, Instant.now())
+                val session = Session(userScript::class.simpleName!!, sessionCounter, Instant.now())
 
                 val job = launch {
                     when(events) {
-                        null -> scenario.runSession()
+                        null -> userScript.runSession()
                         else -> events.publishEvents(session) {
-                            scenario.runSession()
+                            userScript.runSession()
                         }
                     }
                 }
@@ -154,7 +155,7 @@ private fun main() = runBlocking<Unit> {
             println(event)
         }
     }
-    val scenario = ExampleScenario()
+    val scenario = ExampleUserScript()
     for (i in 1..10L) {
         val session = Session(scenario::class.simpleName!!,i, Instant.now())
         launch {
