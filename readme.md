@@ -16,7 +16,7 @@ interface UserScript {
 ```
 An [example implementation](src/main/kotlin/laad/ExampleUserScript.kt) looks like this.
 ```kotlin
-class ExampleUserScript(override val events: SendChannel<Event>): WebClientScenario() {
+class ExampleUserScript(): WebClientUserScript() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {
