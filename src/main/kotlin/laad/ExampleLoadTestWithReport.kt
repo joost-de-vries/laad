@@ -6,24 +6,25 @@ import laad.gatling.gatlingEventProcessor
 import laad.gatling.generateReport
 
 private fun main() = runBlocking {
-    val config = config<ExampleScenario>()
-    val scenarioRunner = runScenario(ExampleScenario(gatlingEventProcessor(config)), tick = 1.s)
+    val config = config<ExampleUserScript>()
+    val eventProcessor = gatlingEventProcessor(config)
+    val loadTest = runUserScript(ExampleUserScript(),eventProcessor)
 
     red("every second increase by 1")
     for (i in 1 .. 10) {
-        scenarioRunner.goTo(i)
+        loadTest.goTo(i)
         delay(1.s)
     }
     red("hold steady for 5 seconds")
     delay(5.s)
     red("steep increase for 3 seconds")
-    scenarioRunner.goTo(20)
+    loadTest.goTo(20)
     delay(3.s)
 
     red("back to steady for 3 seconds")
-    scenarioRunner.goTo(10)
+    loadTest.goTo(10)
     delay(3.s)
 
-    scenarioRunner.stop()
+    loadTest.stop()
     generateReport(config)
 }

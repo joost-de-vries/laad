@@ -6,17 +6,17 @@ To see whether that's true let's see what's achievable in a few hours work.
 The goal is to be able to increase the number of concurrent 'users' gradually, hold steady for a while, do a brief burst and then cool down.
 
 To try it out first start [wiremock](src/main/kotlin/laad/RunWiremock.kt)  
-Then start an [example scenario](src/main/kotlin/laad/ExampleSimulation.kt)
+Then start an [example load test](src/main/kotlin/laad/ExampleLoadTest.kt)
 
-Each 'user's actions is represented by a [scenario](src/main/kotlin/laad/Scenario.kt)
+Each 'user's actions is represented by a [user script](src/main/kotlin/laad/UserScript.kt). Which is just a suspend method that's called to start a user session.
 ```kotlin
-interface Scenario {
+interface UserScript {
     suspend fun runSession()
 }
 ```
-An [example implementation](src/main/kotlin/laad/ExampleScenario.kt) looks like this.
+An [example implementation](src/main/kotlin/laad/ExampleUserScript.kt) looks like this.
 ```kotlin
-class ExampleScenario(override val events: SendChannel<Event>): WebClientScenario() {
+class ExampleUserScript(override val events: SendChannel<Event>): WebClientScenario() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {
@@ -32,34 +32,34 @@ class ExampleScenario(override val events: SendChannel<Event>): WebClientScenari
 }
 ```
 A kotlin actor is started that can be sent two messages: 'scale to $number concurrent users' and 'stop'.  
-It launches scenario coroutines to get to the desired amount of concurrently running scenario's. Starting new ones when running ones finish. Or to scale up to a higher load. And stopping scenario's if a lower number is required.
+It launches scenario coroutines to get to the desired amount of concurrently running user scripts. Starting new ones when scripts have finished, keeping the nr of concurrent user sessions constant. Or scaling up or down to a new level. Stopping user scripts if a lower number is required.
 
-We specify the [outline of the simulation](src/main/kotlin/laad/ExampleSimulation.kt) as follows
+We specify the [shape of the load test](src/main/kotlin/laad/ExampleLoadTest.kt) as follows
 ```kotlin
 fun main() = runBlocking {
 
-    val scenarioRunner = runScenario(ExampleScenario(loggingEventProcessor()), tick = 1.s)
+    val loadTest = runUserScript(ExampleScenario())
 
     // every second increase by 1
     for (i in 1 .. 10) {
-        scenarioRunner.goTo(i)
+        loadTest.goTo(i)
         delay(1.s)
     }
     // hold steady for 5 seconds
     delay(5.s)
     // steep increase for 3 seconds
-    scenarioRunner.goTo(20)
+    loadTest.goTo(20)
     delay(3.s)
 
     // back to steady for 3 seconds
-    scenarioRunner.goTo(10)
+    loadTest.goTo(10)
     delay(3.s)
 
-    scenarioRunner.stop()
+    loadTest.stop()
 }
 ```
 
-[WebClientScenario](src/main/kotlin/laad/webclient/WebClientScenario.kt) is an example implementation using Spring WebClient. But any other non-blocking http client would be possible.  
+[WebClientUserScript](src/main/kotlin/laad/webclient/WebClientUserScript.kt) is an example implementation using Spring WebClient. But any other non-blocking http client would be possible.  
 The implementation will have to map the responses to [load test events](src/main/kotlin/laad/Event.kt): did the call succeed or not and how much time did it take.
 
 Another kotlin actor receives these events. To aggregate the events and allow creation of reports. Here we only log the incoming events.

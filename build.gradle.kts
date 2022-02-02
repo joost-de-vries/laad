@@ -1,11 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.6.10-RC"
+    kotlin("jvm") version "1.6.10"
     `java-gradle-plugin`
     idea
-//    id("io.spring.dependency-management") version "1.0.11.RELEASE"
-//    id("org.springframework.boot") version "2.4.11"
 }
 
 group = "me.joostdevries"
@@ -14,9 +12,8 @@ version = "1.0-SNAPSHOT"
 repositories {
     mavenCentral()
 }
-val coroutinesVersion = "1.6.0-RC"
+val coroutinesVersion = "1.6.0"
 dependencies {
-    //implementation(platform("org.springframework.boot:spring-boot-dependencies:2.4.11"))
     implementation("org.springframework:spring-webflux:5.3.10")
     implementation("io.projectreactor.netty:reactor-netty-http:1.0.12")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$coroutinesVersion")

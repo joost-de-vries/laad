@@ -2,8 +2,6 @@ package laad.gatling
 
 import akka.japi.Option
 import io.gatling.commons.stats.Status
-import io.gatling.core.config.GatlingConfiguration
-import io.gatling.core.config.GatlingPropertiesBuilder
 import io.gatling.core.stats.writer.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.actor
@@ -12,7 +10,6 @@ import scala.Predef
 import scala.collection.JavaConverters
 import io.gatling.core.session.Session as GatlingSession
 import scala.collection.immutable.List as ScalaList
-import kotlinx.coroutines.*
 
 @Suppress("INVISIBLE_REFERENCE")
 fun CoroutineScope.gatlingEventProcessor(config: ReportConfig) = actor<Event> {
@@ -58,7 +55,7 @@ private fun Outcome.toResponseCode(): String? = when(this) {
     is Connect -> this::class.simpleName + exceptionClass.simpleName
     is HttpStatus -> code.toString()
     TimedOut -> this.toString()
-    is Unknown -> this::class.simpleName + exceptionClass.simpleName
+    is ExceptionFailure -> this::class.simpleName + exceptionClass.simpleName
 }
 
 private fun serializer(config: ReportConfig): FileData {
