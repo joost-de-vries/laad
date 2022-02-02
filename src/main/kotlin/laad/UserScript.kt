@@ -9,14 +9,14 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-interface Scenario {
+interface UserScript {
     suspend fun runSession()
 }
 
-abstract class AbstractScenario: Scenario {
-
+abstract class AbstractUserScript: UserScript {
     open fun toOutcome(e: java.lang.Exception): Outcome? = null
 }
+
 @Suppress("INVISIBLE_REFERENCE")
 suspend fun <A> call(name: String, timeout: Duration = Duration.ofSeconds(1), block: suspend () -> A): A? {
     val result: A
@@ -56,7 +56,7 @@ fun CoroutineScope.consoleEventProcessor(): SendChannel<Event> = actor {
     }
 }
 
-class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
+class SimpleExampleUserScript(logins: List<Int>, val seconds: Int): UserScript {
     val iterator = sequence<Int> {
         while(true){
             yieldAll(logins)
@@ -74,7 +74,7 @@ class SimpleExampleScenario(logins: List<Int>, val seconds: Int): Scenario {
 
 private fun main() = runBlocking<Unit> {
 
-    val scenario = SimpleExampleScenario((0..10).toList(), 4)
+    val scenario = SimpleExampleUserScript((0..10).toList(), 4)
     for(i in 1..10){
         with(scenario){
             runSession()

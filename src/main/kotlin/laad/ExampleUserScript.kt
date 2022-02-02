@@ -2,7 +2,7 @@ package laad
 
 import laad.webclient.*
 
-class ExampleScenario: WebClientScenario() {
+class ExampleUserScript: WebClientUserScript() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {
@@ -17,7 +17,7 @@ class ExampleScenario: WebClientScenario() {
     }
 }
 
-class FailingScenario: WebClientScenario() {
+class FailingUserScript: WebClientUserScript() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {

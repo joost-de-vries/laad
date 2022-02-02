@@ -6,12 +6,12 @@ To see whether that's true let's see what's achievable in a few hours work.
 The goal is to be able to increase the number of concurrent 'users' gradually, hold steady for a while, do a brief burst and then cool down.
 
 To try it out first start [wiremock](src/main/kotlin/laad/RunWiremock.kt)  
-Then start an [example scenario](src/main/kotlin/laad/ExampleSimulation.kt)
+Then start an [example scenario](src/main/kotlin/laad/ExampleLoadTest.kt)
 
-Each 'user's actions is represented by a [scenario](src/main/kotlin/laad/Scenario.kt)
+Each 'user's actions are represented by a [UserScript](src/main/kotlin/laad/UserScript.kt)
 ```kotlin
-interface Scenario {
-    suspend fun runSession()
+interface UserScript {
+    suspend fun runScript()
 }
 ```
 An [example implementation](src/main/kotlin/laad/ExampleScenario.kt) looks like this.

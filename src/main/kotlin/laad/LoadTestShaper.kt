@@ -8,7 +8,7 @@ import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-class ScenarioRunner(private val channel: SendChannel<RunnerMessage>) {
+class LoadTestShaper(private val channel: SendChannel<RunnerMessage>) {
     suspend fun goTo(desired: Int) = channel.send(GoTo(desired))
 
     suspend fun stop() {
@@ -31,8 +31,8 @@ data class GoTo(val concurrent: Int): RunnerMessage
 
 data class GetRunningSessions(val active: CompletableDeferred<Int>): RunnerMessage
 
-fun CoroutineScope.runScenario(scenario: Scenario, events: SendChannel<Event>?, tick: Duration = Duration.ofSeconds(3)) = ScenarioRunner(actor {
-    val sessions = Sessions(0, mutableListOf(), scenario, events, coroutineContext + SupervisorJob(coroutineContext[Job]))
+fun CoroutineScope.runConstantActive(userScript: UserScript, events: SendChannel<Event>?, tick: Duration = Duration.ofSeconds(3)) = LoadTestShaper(actor {
+    val sessions = Sessions(0, mutableListOf(), userScript, events, coroutineContext + SupervisorJob(coroutineContext[Job]))
 
     fun processMessages() {
         do {
@@ -67,7 +67,7 @@ fun CoroutineScope.runScenario(scenario: Scenario, events: SendChannel<Event>?, 
 class Sessions(
     var desired: Int,
     private val jobs: MutableList<Job>,
-    private val scenario: Scenario,
+    private val userScript: UserScript,
     private val events: SendChannel<Event>?,
     override val coroutineContext: CoroutineContext
 ): CoroutineScope {
@@ -75,33 +75,33 @@ class Sessions(
 
     fun adjustSessions(): Int {
         val removed = removeNonActiveSessions()
-        if (removed > 0) println("removed $removed finished sessions")
+        if (removed > 0) println("removed $removed finished user sessions")
 
-        println("checking sessions. current: ${jobs.size}, desired: $desired")
+        println("checking user sessions. current: ${jobs.size}, desired: $desired")
         val diff = desired - jobs.size
         if (diff > 0) {
             for (i in 0 until diff) {
-                val session = Session(scenario::class.simpleName!!, sessionCounter, Instant.now())
+                val session = Session(userScript::class.simpleName!!, sessionCounter, Instant.now())
 
                 val job = launch {
                     when(events) {
-                        null -> scenario.runSession()
+                        null -> userScript.runSession()
                         else -> events.publishEvents(session) {
-                            scenario.runSession()
+                            userScript.runSession()
                         }
                     }
                 }
                 sessionCounter += 1
                 jobs += job
             }
-            println("started $diff sessions")
+            println("started $diff user sessions")
         } else if (diff < 0) {
             for (i in 0 until -diff) {
                 val job = jobs.first()
                 job.cancel()
                 jobs.removeAt(0)
             }
-            println("stopped ${-diff} sessions")
+            println("stopped ${-diff} user sessions")
         } else {
             println("steady as she goes")
         }
@@ -154,7 +154,7 @@ private fun main() = runBlocking<Unit> {
             println(event)
         }
     }
-    val scenario = ExampleScenario()
+    val scenario = ExampleUserScript()
     for (i in 1..10L) {
         val session = Session(scenario::class.simpleName!!,i, Instant.now())
         launch {

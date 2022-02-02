@@ -3,8 +3,8 @@ package laad
 import laad.webclient.*
 import java.util.*
 
-class WeightedScenario(
-    private val scenarios: List<Pair<Int, Scenario>>): Scenario {
+class WeightedUserScripts(
+    private val scenarios: List<Pair<Int, UserScript>>): UserScript {
     init {
         require(scenarios.isNotEmpty()) { "Expected at least one scenario." }
     }
@@ -15,8 +15,8 @@ class WeightedScenario(
     }
 }
 
-fun weighted(vararg scenarios: Pair<Int, Scenario>) = weighted(scenarios.toList())
-fun weighted(scenarios: List<Pair<Int, Scenario>>) = WeightedScenario(scenarios)
+fun weighted(vararg scenarios: Pair<Int, UserScript>) = weighted(scenarios.toList())
+fun weighted(scenarios: List<Pair<Int, UserScript>>) = WeightedUserScripts(scenarios)
 
 private class WeightedIterator<E>(private val random: Random = Random()) {
     private val map = TreeMap<Double, E>()
@@ -46,7 +46,7 @@ private class WeightedIterator<E>(private val random: Random = Random()) {
     }
 }
 
-class OtherExampleScenario(): WebClientScenario() {
+class OtherExampleUserScript(): WebClientUserScript() {
     private val webclient = createWebClient()
 
     override suspend fun runSession() {
