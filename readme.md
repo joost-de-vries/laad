@@ -1,6 +1,7 @@
-# load testing using kotlin coroutines
+# Load testing using kotlin coroutines
 This is an experiment in load testing without a specialised load framework like gatling or jmeter.  
-Starting from the idea that with Kotlin coroutines concurrency is easy enough that you don't really need a framework.
+Those are _frameworks_ that severely constrain what you can do. This instead is as much as possible a _library_ instead: as long the user scripts use Kotlin coroutines you can do whatever you need to.  
+The implementation started from the idea that with Kotlin coroutines concurrency is easy enough that you don't really need a framework.
 To see whether that's true let's see what's achievable in a few hours work.
 
 The goal is to be able to increase the number of concurrent 'users' gradually, hold steady for a while, do a brief burst and then cool down.
